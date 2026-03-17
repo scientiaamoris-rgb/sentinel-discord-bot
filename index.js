@@ -1,5 +1,5 @@
 import 'dotenv/config';
-import { Client, GatewayIntentBits } from 'discord.js';
+import { Client, GatewayIntentBits, REST, Routes, SlashCommandBuilder } from 'discord.js';
 import { createClient } from '@supabase/supabase-js';
 
 // Discord client
@@ -12,6 +12,31 @@ const supabase = createClient(
   process.env.SUPABASE_URL,
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
+
+// Register slash commands
+const commands = [
+  new SlashCommandBuilder()
+    .setName('workers')
+    .setDescription('Check Sentinel status')
+    .toJSON()
+];
+
+const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_TOKEN);
+
+(async () => {
+  try {
+    console.log('🔄 Registering slash commands...');
+
+    await rest.put(
+      Routes.applicationCommands(process.env.APPLICATION_ID),
+      { body: commands }
+    );
+
+    console.log('✅ Slash commands registered');
+  } catch (error) {
+    console.error(error);
+  }
+})();
 
 // When bot starts
 client.once('ready', async () => {
