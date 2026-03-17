@@ -1,7 +1,23 @@
+import 'dotenv/config';
+import { Client, GatewayIntentBits } from 'discord.js';
+import { createClient } from '@supabase/supabase-js';
+
+// Discord client
+const client = new Client({
+  intents: [GatewayIntentBits.Guilds]
+});
+
+// Supabase client
+const supabase = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY
+);
+
+// When bot starts
 client.once('ready', async () => {
   console.log(`🔥 Sentinel ONLINE as ${client.user.tag}`);
 
-  // Update Sentinel status
+  // Update Sentinel status in DB
   await supabase
     .from('workers')
     .update({
@@ -10,7 +26,7 @@ client.once('ready', async () => {
     })
     .eq('slug', 'sentinel');
 
-  // Log startup
+  // Log startup event
   await supabase.from('events').insert({
     type: 'status',
     payload: {
@@ -19,3 +35,25 @@ client.once('ready', async () => {
     }
   });
 });
+
+// Slash command handler
+client.on('interactionCreate', async (interaction) => {
+  if (!interaction.isChatInputCommand()) return;
+
+  if (interaction.commandName === 'workers') {
+    await interaction.reply('🧠 Sentinel ONLINE + Supabase connected');
+
+    // Log command
+    await supabase.from('events').insert({
+      type: 'command',
+      payload: {
+        command: '/workers',
+        user: interaction.user.username,
+        time: new Date().toISOString()
+      }
+    });
+  }
+});
+
+// Login
+client.login(process.env.DISCORD_TOKEN);
