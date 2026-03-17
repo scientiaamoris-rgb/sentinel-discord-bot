@@ -1,20 +1,21 @@
-import 'dotenv/config';
-import { Client, GatewayIntentBits } from 'discord.js';
+client.once('ready', async () => {
+  console.log(`🔥 Sentinel ONLINE as ${client.user.tag}`);
 
-const client = new Client({
-  intents: [GatewayIntentBits.Guilds]
+  // Update Sentinel status
+  await supabase
+    .from('workers')
+    .update({
+      status: 'online',
+      last_seen_at: new Date().toISOString()
+    })
+    .eq('slug', 'sentinel');
+
+  // Log startup
+  await supabase.from('events').insert({
+    type: 'status',
+    payload: {
+      message: 'Sentinel connected',
+      time: new Date().toISOString()
+    }
+  });
 });
-
-client.once('ready', () => {
-  console.log(`Sentinel ONLINE as ${client.user.tag}`);
-});
-
-client.on('interactionCreate', async interaction => {
-  if (!interaction.isChatInputCommand()) return;
-
-  if (interaction.commandName === 'workers') {
-    await interaction.reply('🧠 Sentinel ONLINE (cloud mode)');
-  }
-});
-
-client.login(process.env.DISCORD_TOKEN);
